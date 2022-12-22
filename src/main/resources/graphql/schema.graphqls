@@ -1,0 +1,30 @@
+type BaseVo {
+    uuid: ID
+}
+
+type Emp {
+    uuid : BaseVo
+    empId: String!
+    empName: String!
+    password: String!
+    empRoles: [EmpRole]
+}
+
+type EmpRole {
+    uuid : BaseVo
+    empId: ID
+    roleId: ID
+    role: Role!
+}
+
+type Role {
+    uuid : BaseVo
+    roleId: Int
+    roleName: String
+    description: String
+}
+
+type Query {
+    getEmpInfo(empName: String!, password: String!): Emp!
+    getRoles: [Role]
+}

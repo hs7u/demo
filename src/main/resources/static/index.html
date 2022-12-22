@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>首頁</title>
+</head>
+
+<body>
+    <a href="/user"><input type="button" value="使用者頁面" /></a>
+    <a href="/secret"><input type="button" value="VIP頁面" /></a>
+    <a href="/admin"><input type="button" value="管理員頁面" /></a>
+    <a href="/h2-console"><input type="button" value="h2 管理頁面" /></a>
+    <a href="/login"><input type="button" value="登入"></a>
+    <input type="button" id="logout" value="登出">
+    <p>你的權限是【<span id="role"></span>】</p>
+    <br>
+    <br>
+    <br>
+    <div style="margin-left: 15rem;">
+        <h5>
+            write graphql query in console; use funciton postWithCsrfToken to send;
+        </h5>
+        <br>
+        <br>
+        <span>example</span>
+        <input type="button" id="send" value="seeeeeeeeend" style="height: 10rem; width: 10rem;">
+    </div>
+</body>
+    <script>
+        fetch("/myRole",{
+            method: "GET",
+            headers: new Headers({
+                "Accept": "application/json"
+            })
+        }).then(res => res.json()).then(json => {
+                let roleEle = document.getElementById("role");
+                    json.forEach(role => {
+                        roleEle.textContent += `${role}, `;
+                })
+                    roleEle.textContent = roleEle.textContent.slice(0,-2);
+            }).catch(() => {
+                document.getElementById("role").textContent = "尚未登入，沒有權限";
+        });
+                        
+    </script>
+    <script type="module">
+        import {postWithCsrfToken} from "./js/csrfTokenUtil.js";
+        // bind logout button
+        document.getElementById("logout").addEventListener("click",() => {
+            postWithCsrfToken("/logout").then(r => {window.location.href = r.url});
+        });
+
+
+        // example
+        document.getElementById("send").addEventListener("click",() => {
+            let gqlBody = {
+                query: `query($empName: String!, $password: String!) {
+                    getEmpInfo(empName: $empName, password: $password){
+                        
+                            empId
+                            empName
+                            password
+                            empRoles{
+                                empId
+                                roleId
+                                role {
+                                    roleId
+                                    roleName
+                                    description
+                                }
+                            }
+                        
+                    }
+                }`,
+                variables: {
+                    empName: "admin",
+                    password: "pwd"
+                }
+            }            
+            postWithCsrfToken("/graphiql", gqlBody).then((res) => res.json()).then((result) => console.log(result));
+        });        
+    </script>
+</html>

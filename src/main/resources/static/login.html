@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login Form</title>
+</head>
+
+<body>
+    <form id="loginForm" action="/login" method="post">
+        <label>username:
+            <input type="text" placeholder="username" name="username" id="username" />
+        </label>
+        <label>password:
+            <input type="password" placeholder="password" name="password" id="password" />
+        </label>
+        <input type="submit" value="登入" />
+    </form>
+</body>
+    <script type="module">
+        import {appendCsrfToken} from "./js/csrfTokenUtil.js";
+        appendCsrfToken(document.getElementById("loginForm"));
+    </script>
+
+</html>
