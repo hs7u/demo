@@ -4,7 +4,7 @@ type BaseVo {
 
 type Emp {
     uuid : BaseVo
-    empId: String!
+    empId: String
     empName: String!
     password: String!
     empRoles: [EmpRole]
@@ -27,4 +27,10 @@ type Role {
 type Query {
     getEmpInfo(empName: String!, password: String!): Emp!
     getRoles: [Role]
+}
+
+type Mutation {
+    register(empName: String!, password: String!): Emp!
+    updatePassword(empId: ID!, empName: String!, password: String!, newPassword: String!): Emp
+    delete(empId: ID!): Boolean!
 }

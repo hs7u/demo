@@ -19,7 +19,7 @@ public class WebSecurityConfig {
          try {
             return httpSecurity
                     .authorizeHttpRequests()
-                    .requestMatchers("/","/js/**","/csrfToken","/graphiql").permitAll()
+                    .requestMatchers("/","/login.html","/js/**","/csrfToken","/graphiql").permitAll()
                     .requestMatchers("/user/**").hasRole("USER")
                     .requestMatchers("/vip/**").hasRole("VIP")
                     .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -29,7 +29,7 @@ public class WebSecurityConfig {
                     .and()
                     .formLogin()
                         .loginProcessingUrl("/login")
-                        .loginPage("/login.html").permitAll()                    
+                        .loginPage("/login").permitAll()                    
                         .defaultSuccessUrl("/", true)
                     .and()
                         .logout()

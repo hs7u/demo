@@ -23,8 +23,11 @@
         </h5>
         <br>
         <br>
-        <span>example</span>
-        <input type="button" id="send" value="seeeeeeeeend" style="height: 10rem; width: 10rem;">
+        <span>register example</span>
+        <input type="text" id="empName" placeholder="empName"/>
+        <input type="text" id="empPassword" placeholder="empPassword"/>
+        <input type="button" id="search" value="search" style="height: 10rem; width: 10rem;">
+        <input type="button" id="insert" value="insert" style="height: 10rem; width: 10rem;">
     </div>
 </body>
     <script>
@@ -52,8 +55,8 @@
         });
 
 
-        // example
-        document.getElementById("send").addEventListener("click",() => {
+        // search example
+        document.getElementById("search").addEventListener("click",() => {                        
             let gqlBody = {
                 query: `query($empName: String!, $password: String!) {
                     getEmpInfo(empName: $empName, password: $password){
@@ -80,5 +83,34 @@
             }            
             postWithCsrfToken("/graphiql", gqlBody).then((res) => res.json()).then((result) => console.log(result));
         });        
+        // insert example
+        document.getElementById("insert").addEventListener("click",() => {
+            let empName = document.getElementById("empName").value;
+            let password = document.getElementById("empPassword").value;
+            let gqlBody = {
+                query: `mutation($empName: String!, $password: String!) {
+                    register(empName: $empName, password: $password){                        
+                            empId
+                            empName
+                            password
+                            empRoles{
+                                empId
+                                roleId
+                                role {
+                                    roleId
+                                    roleName
+                                    description
+                                }
+                            }
+                        
+                    }
+                }`,
+                variables: {
+                    empName: empName,
+                    password: password
+                }
+            }            
+            postWithCsrfToken("/graphiql", gqlBody).then((res) => res.json()).then((result) => console.log(result));
+        });
     </script>
 </html>

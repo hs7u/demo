@@ -29,11 +29,41 @@ export function postWithCsrfToken(url, body) {
     }).then(json => {
             return fetch(url, {
                 method: "POST",
-            headers: new Headers({
+                headers: new Headers({
                     'Content-Type': 'application/json',
-                [json.headerName]: json.token
-            }),
+                    [json.headerName]: json.token
+                }),
             body: JSON.stringify(body)
         });
     });
 }
+// 登入H2 console + query時
+// appendCsrfToken(document.getElementById("login"));
+// appendCsrfToken(document.querySelector("[name=h2querysubmit]"));
+
+// example
+// let gqlBody = {
+//     query: `mutation($empId: ID!, $empName: String!, $password: String!, $newPassword: String!) {
+//         updatePassword(empId: $empId,empName: $empName, password: $password, newPassword: $newPassword){                        
+//                 empId
+//                 empName
+//                 password
+//                 empRoles{
+//                     empId
+//                     roleId
+//                     role {
+//                         roleId
+//                         roleName
+//                         description
+//                     }
+//                 }
+            
+//         }
+//     }`,
+//     variables: {
+//         empId : "18beb343-4260-4c41-8d91-45492cf9cc07",
+//         empName: "test",
+//         password: 1234,
+//         newPassword: 2234
+//     }
+// }            

@@ -1,5 +1,7 @@
 package com.batch.demo.security;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,6 +26,8 @@ public class EmpDetailService implements UserDetailsService{
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    private final List<String> DEFAULT_USER = Arrays.asList("admin", "user", "vip");
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Emp nameEx = new Emp();
@@ -33,7 +37,9 @@ public class EmpDetailService implements UserDetailsService{
         if(!optional.isPresent()) throw new UsernameNotFoundException(String.format("User %s not found", username));        
         Emp emp = optional.get();
         Role[] roles = emp.getEmpRoles().stream().map(er -> er.getRole()).toArray(Role[]::new);
-        emp.setPassword(passwordEncoder.encode(emp.getPassword()));
+        // data.sql insert的帳號未經過Bcrypt 加密 其餘不用
+        if(DEFAULT_USER.contains(emp.getEmpName()))
+            emp.setPassword(passwordEncoder.encode(emp.getPassword()));
         
         return new EmpPrincipal(emp, RoleHelper.castToGrantedAuthorities(roles));
     }
