@@ -1,7 +1,5 @@
 package com.batch.demo.security;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.batch.demo.repository.BaseRepository;
+import com.batch.demo.util.VoUtil;
 import com.batch.demo.vo.vo.Emp;
 import com.batch.demo.vo.vo.Role;
 
@@ -26,7 +25,6 @@ public class EmpDetailService implements UserDetailsService{
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private final List<String> DEFAULT_USER = Arrays.asList("admin", "user", "vip");
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -38,7 +36,7 @@ public class EmpDetailService implements UserDetailsService{
         Emp emp = optional.get();
         Role[] roles = emp.getEmpRoles().stream().map(er -> er.getRole()).toArray(Role[]::new);
         // data.sql insert的帳號未經過Bcrypt 加密 其餘不用
-        if(DEFAULT_USER.contains(emp.getEmpName()))
+        if (!VoUtil.isEncoded(emp.getPassword()))
             emp.setPassword(passwordEncoder.encode(emp.getPassword()));
         
         return new EmpPrincipal(emp, RoleHelper.castToGrantedAuthorities(roles));

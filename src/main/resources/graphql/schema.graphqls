@@ -1,3 +1,5 @@
+scalar OffsetDateTime
+
 type BaseVo {
     uuid: ID
 }
@@ -24,6 +26,13 @@ type Role {
     description: String
 }
 
+type Message {
+    uuid : BaseVo
+    empName: String!
+    message: String!
+    dateTime: OffsetDateTime!
+}
+
 type Query {
     getEmpInfo(empName: String!, password: String!): Emp!
     getRoles: [Role]
@@ -32,5 +41,10 @@ type Query {
 type Mutation {
     register(empName: String!, password: String!): Emp!
     updatePassword(empId: ID!, empName: String!, password: String!, newPassword: String!): Emp
-    delete(empId: ID!): Boolean!
+    # delete(empId: ID!): Boolean!
+    createMessage(empName: String!, message: String!): Message
+}
+
+type Subscription {
+    messages: Message!
 }

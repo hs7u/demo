@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <script type="text/javascript" src="https://unpkg.com/graphql-ws/umd/graphql-ws.min.js"></script>
     <title>首頁</title>
 </head>
 
@@ -17,7 +18,7 @@
     <br>
     <br>
     <br>
-    <div style="margin-left: 15rem;">
+    <div>
         <h5>
             write graphql query in console; use funciton postWithCsrfToken to send;
         </h5>
@@ -81,7 +82,7 @@
                     password: "pwd"
                 }
             }            
-            postWithCsrfToken("/graphiql", gqlBody).then((res) => res.json()).then((result) => console.log(result));
+            postWithCsrfToken("/graphql", gqlBody).then((res) => res.json()).then((result) => console.log(result));
         });        
         // insert example
         document.getElementById("insert").addEventListener("click",() => {
@@ -110,7 +111,40 @@
                     password: password
                 }
             }            
-            postWithCsrfToken("/graphiql", gqlBody).then((res) => res.json()).then((result) => console.log(result));
+            postWithCsrfToken("/graphql", gqlBody).then((res) => res.json()).then((result) => console.log(result));
         });
+
+
+        /************************************************************************************/ 
+        let chatmutation = {
+                query: `mutation ttt {
+                    createMessage(empName: "admin", message: "yabe"){ empName,message,dateTime }
+                }`               
+        }
+
+        const client = graphqlWs.createClient({
+            url: 'ws://localhost:8081/graphql-ws',
+        });
+
+        // subscription
+        (async () => {
+            const onNext = (data) => {
+                console.log("Subscription data:", data);
+            };
+
+            await new Promise((resolve, reject) => {
+                client.subscribe(
+                    {
+                        query: 'subscription { messages{empName,message,dateTime} }',
+                    },
+                    {
+                        next: onNext,
+                        error: reject,
+                        complete: resolve,
+                    },
+                );
+            });
+        })();    
+
     </script>
 </html>
