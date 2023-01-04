@@ -12,13 +12,17 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @IdClass(CompositePK.class)
 @Entity
 @Table(name = "EMP_ROLE")
 @EqualsAndHashCode(callSuper=false)
+@AllArgsConstructor
+@NoArgsConstructor
 @Data
 public final class EmpRole extends BaseVo {
     
@@ -33,7 +37,6 @@ public final class EmpRole extends BaseVo {
     public static class CompositePK implements Serializable {
         private java.util.UUID uuid;
         private java.util.UUID empId;
-        // private Long empId;
         private Long roleId;
     }
 

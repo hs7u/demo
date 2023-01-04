@@ -15,7 +15,7 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper=false)
 @ToString
 @Data
-public final class Role extends BaseVo{
+public final class Role extends BaseVo {
     
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "ROLE_ID", nullable = false)
@@ -26,4 +26,9 @@ public final class Role extends BaseVo{
     @Basic
     @Column(name = "DESCRIPTION", length = 100)
     private String description;
+
+    public Role defaultRole(String roleName) {
+        this.roleName = roleName;
+        return this;
+    }
 }

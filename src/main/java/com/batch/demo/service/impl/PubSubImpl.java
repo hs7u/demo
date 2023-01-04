@@ -28,12 +28,13 @@ public class PubSubImpl implements PubSubService {
 
     @Override
     public Mono<Message> createMessage(String empName, String msg) {
-        var Message = new Message(empName, msg, OffsetDateTime.now());
-        this.createdMessages.add(Message);
+        var message = new Message(empName, msg, OffsetDateTime.now());
+        this.createdMessages.add(message);
         if (this.sink.currentSubscriberCount() > 0) {
-            this.sink.tryEmitNext(Message);
+            this.sink.tryEmitNext(message);
         }
-        return Mono.just(Message);
+
+        return Mono.just(message);
     }
 
     @Override

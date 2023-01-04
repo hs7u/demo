@@ -27,8 +27,10 @@
         <span>register example</span>
         <input type="text" id="empName" placeholder="empName"/>
         <input type="text" id="empPassword" placeholder="empPassword"/>
-        <input type="button" id="search" value="search" style="height: 10rem; width: 10rem;">
-        <input type="button" id="insert" value="insert" style="height: 10rem; width: 10rem;">
+        <input type="button" id="search" value="search" style="height: 5rem; width: 5rem;">
+        <input type="button" id="insert" value="insert" style="height: 5rem; width: 5rem;">
+        <input type="button" id="connect" value="connect" style="height: 5rem; width: 5rem;">
+        <input type="button" id="disconnect" value="disconnect" style="height: 5rem; width: 5rem;">
     </div>
 </body>
     <script>
@@ -116,35 +118,56 @@
 
 
         /************************************************************************************/ 
-        let chatmutation = {
-                query: `mutation ttt {
-                    createMessage(empName: "admin", message: "yabe"){ empName,message,dateTime }
-                }`               
+        let chatMutation = {
+            query: `mutation {
+                createMessage(empName: "admin", message: "yabe"){ empName,message,dateTime }
+            }`
         }
 
         const client = graphqlWs.createClient({
             url: 'ws://localhost:8081/graphql-ws',
         });
 
+        document.getElementById("disconnect").addEventListener("click", async() => {   
+            client.dispose();
+        }); 
+
         // subscription
-        (async () => {
+        document.getElementById("connect").addEventListener("click", async() => {                   
             const onNext = (data) => {
                 console.log("Subscription data:", data);
             };
 
             await new Promise((resolve, reject) => {
-                client.subscribe(
-                    {
-                        query: 'subscription { messages{empName,message,dateTime} }',
-                    },
-                    {
-                        next: onNext,
-                        error: reject,
-                        complete: resolve,
-                    },
-                );
+                client.subscribe({
+                    query: 'subscription { messages{empName,message,dateTime} }',
+                },
+                {
+                    next: onNext,
+                    error: reject,
+                    complete: resolve,
+                });
             });
-        })();    
+        });
+
+        // (async () => {
+        //     const onNext = (data) => {
+        //         console.log("Subscription data:", data);
+        //     };
+
+        //     await new Promise((resolve, reject) => {
+        //         client.subscribe(
+        //             {
+        //                 query: 'subscription { messages{empName,message,dateTime} }',
+        //             },
+        //             {
+        //                 next: onNext,
+        //                 error: reject,
+        //                 complete: resolve,
+        //             },
+        //         );
+        //     });
+        // })();    
 
     </script>
 </html>

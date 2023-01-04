@@ -1,23 +1,33 @@
 package com.batch.demo.config;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.UUID;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
+import org.springframework.batch.core.job.builder.FlowBuilder;
 import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.job.flow.Flow;
+import org.springframework.batch.core.job.flow.FlowExecutionStatus;
+import org.springframework.batch.core.job.flow.JobExecutionDecider;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.item.Chunk;
-import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.util.ResourceUtils;
 
 import com.batch.demo.batch.listener.JobListener;
 import com.batch.demo.batch.listener.RetryAndSkipListener;
@@ -29,6 +39,9 @@ import com.batch.demo.batch.util.writer.RepoWriterUtil;
 import com.batch.demo.repository.BaseRepository;
 import com.batch.demo.vo.vo.Emp;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Configuration
 @EnableBatchProcessing
 public class BatchConfig {
@@ -36,31 +49,48 @@ public class BatchConfig {
 	@Autowired
 	private JobRepository jobRepository;
 	@Autowired
+	private PlatformTransactionManager platformTransactionManager;
+	@Autowired
     private BaseRepository<Emp, UUID> empRepo;
+	@Value("${file.input.path3}") 
+	private String filePath;
 
 	// showing error log example
-	@Bean("empWriter")
-	public ItemWriter<Emp> crWriter(){
-		return new ItemWriter<Emp>() {
-			@Override
-			public void write(Chunk<? extends Emp> chunk) throws Exception {
-				for(Emp p:chunk){
-					if(p.getEmpName().equals("errorData")){
-						throw new Exception();
-					}
-				}
-				empRepo.saveAll(chunk);
-			}			
+	// @Bean("empWriter")
+	// public ItemWriter<Emp> crWriter(){
+	// 	return new ItemWriter<Emp>() {
+	// 		@Override
+	// 		public void write(Chunk<? extends Emp> chunk) {
+	// 			for(Emp p:chunk){
+	// 				if(p.getEmpName().equals("errorData")){
+	// 					throw new IllegalArgumentException();
+	// 				}
+	// 			}
+	// 			empRepo.saveAll(chunk);
+	// 		}			
+	// 	};
+	// }
+	@Bean
+	public Tasklet deleteOldDataTasklet(){
+		return (StepContribution contribution, ChunkContext chunkContext) -> {
+			log.info("=====>>> before delete has {} rows: ", empRepo.getCountAllEmp());
+			empRepo.deleteAllEmp();
+			log.info("=====>>> after delete has {} rows: ", empRepo.getCountAllEmp());
+			return RepeatStatus.FINISHED;
 		};
 	}
+    // Create Step1
+	@Bean
+    public Step deleteAllStep(){
+		return new StepBuilder("deleteAllStep", jobRepository)
+			.tasklet(deleteOldDataTasklet(), platformTransactionManager).build();
+	}
 
-    // Create Step
+    // Create Step2
     @Bean
     public Step empToDbStep(
-							@Value("${file.input.path1}") String filePath, 
 							ProcessorUtil<Emp> processor,
-							RepoWriterUtil<Emp, UUID> writer, 
-							PlatformTransactionManager platformTransactionManager,
+							RepoWriterUtil<Emp, UUID> writer,
 							StepListener listener,
 							RetryAndSkipListener faultListener
 							) throws FileNotFoundException {
@@ -80,58 +110,47 @@ public class BatchConfig {
 				.skip(Exception.class)
                 .build();
     }
-    
-    // Create Job
-    @Bean("example")
-    public Job empToDbJob(@Qualifier("empToDbStep") Step step,JobListener listener) {
-    	return new JobBuilder("empToDbJob",jobRepository)
-				.incrementer(new RunIdIncrementer())
-				.start(step)
-				.listener(listener)
-				.build();
+	
+	@Bean
+	public JobExecutionDecider emptyFileCheckDecider() {
+		return (jobExecution, stepExecution) -> {
+			try {
+				Resource resources = new UrlResource(ResourceUtils.getURL(filePath));
+				if(resources != null && resources.exists() && resources.isReadable() && 
+					resources.isFile() && resources.contentLength() > 0 )
+					return FlowExecutionStatus.COMPLETED;
+			} catch (IOException e) {
+				log.error("file has unknown problem");
+				return FlowExecutionStatus.UNKNOWN;
+			}
+			log.error("file not exist or is empty");
+			return FlowExecutionStatus.FAILED;
+		};
+	}
+
+	 // Create Flow
+    @Bean("insertFlow")
+    public Flow jobFlow(@Qualifier("emptyFileCheckDecider") JobExecutionDecider decider,
+		@Qualifier("deleteAllStep") Step step1, @Qualifier("empToDbStep") Step step2) {
+    	return new FlowBuilder<Flow>("jobFlow")				
+				.start(decider)
+					.on(FlowExecutionStatus.COMPLETED.getName()).to(step1).next(step2)
+				.from(decider)
+					.on(FlowExecutionStatus.FAILED.getName()).fail()
+				.from(decider)
+					.on(FlowExecutionStatus.UNKNOWN.getName()).fail()
+				.end();
     }
     
-    /**
-	 * decider and flow job example
-	*/
-    // @Bean
-    // public Step step1() {
-	// 	return null;
-	// }
-	
-    // public JobExecutionDecider foo() {
-	// 	return (jobExecution, stepExecution) -> 
-    //         stepExecution.getExitStatus() == ExitStatus.COMPLETED 
-    //             ? new FlowExecutionStatus("COMPLETED") 
-    //             : stepExecution.getExitStatus() == ExitStatus.FAILED 
-    //             ? new FlowExecutionStatus("FAILED") 
-    //             : new FlowExecutionStatus("UNKNOWN");
-	// }
+    // Create Job
+	@Bean("example")
+    public Job empToDbJob(@Qualifier("insertFlow") Flow flow, JobListener listener) {
+    	return new JobBuilder("empToDbJob",jobRepository)
+				.incrementer(new RunIdIncrementer())
+				.start(flow)
+				.build()
+				.listener(listener)
+				.build();
+	}	
 
-	// public Step qux() {
-	// 	return null;
-	// }
-	// public Step quux() {
-	// 	return null;
-	// }
-	// public Step baz() {
-	// 	return null;
-	// }
-	// public Step bar() {
-	// 	return null;
-	// }
-
-	// @Bean
-	// public Job job() {
-	// 	return new JobBuilder("empToDbJob",jobRepository)
-	// 			.incrementer(new RunIdIncrementer())
-	// 			.start(step1())
-	// 			.next(foo()).on("UNKNOWN").to(baz())
-	// 			.from(foo()).on("FAILED").to(bar())
-	// 			.from(foo()).on("COMPLETED").to(qux()).next(quux())
-	// 			.end()
-	// 			.build();
-	// }
 }
-
-

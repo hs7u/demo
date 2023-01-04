@@ -34,6 +34,16 @@ public final class Emp extends BaseVo implements Visitable<Emp>{
 	@JoinColumn(name = "EMP_ID", referencedColumnName = "EMP_ID", insertable = false, updatable = false)
 	private List<EmpRole> empRoles;
 
+    public Emp create(String empName, String password) {
+        this.empName = empName;
+        this.password = password;
+        return this;
+    }
+
+    public void addEmpRole(EmpRole empRole) {
+        this.empRoles.add(empRole);
+    }
+
     @Override
     public Emp accept(Visitor visitor) {
         return visitor.visit(this);
